@@ -260,6 +260,8 @@ object SessionFiles {
             "usr/local/share/vulkan/implicit_layer.d/VkLayer_droiddeck_mali_compat.json",
         ).map { it to it }
         val optional = (arrayOf(
+            "usr/local/lib/liblse_emu.so" to "usr/local/lib/liblse_emu.so",
+            "usr/local/share/licenses/lse-emu/LICENSE" to "usr/local/share/licenses/lse-emu/LICENSE",
             "usr/local/bin/gamescope" to "usr/local/bin/gamescope",
             "usr/local/bin/droiddeck-glprobe" to "usr/local/bin/droiddeck-glprobe",
             "usr/lib/libVkLayer_FROG_gamescope_wsi_aarch64.so" to "usr/lib/libVkLayer_FROG_gamescope_wsi_aarch64.so",
@@ -332,7 +334,13 @@ object SessionFiles {
         for (pack in SERVICE_PACKS.keys) stageStoreService(context, root, pack, ledger)
         ledger.save()
         for (old in arrayOf("aarch64-unix", "aarch64-windows", "i386-windows")) File(root, "$DIRECTAUDIO_DIR/lib/wine/$old").deleteRecursively()
-        val preload = StringBuilder("/usr/local/lib/libddsession.so\n")
+        val cpuFeatures = runCatching { File("/proc/cpuinfo").readLines().filter { it.substringBefore(':').trim() == "Features" } }.getOrDefault(emptyList())
+        val needsLse = cpuFeatures.isNotEmpty() && cpuFeatures.none { it.substringAfter(':').trim().split(Regex("\\s+")).contains("atomics") }
+        val preload = StringBuilder()
+        if (needsLse && File(root, "usr/local/lib/liblse_emu.so").isFile) {
+            preload.append("/usr/local/lib/liblse_emu.so\n")
+        }
+        preload.append("/usr/local/lib/libddsession.so\n")
         if (!File(Environment.getExternalStorageDirectory(), NO_PAD_SWITCH).exists()) {
             preload.append("/usr/local/lib/libfakeinput.so\n")
         }
