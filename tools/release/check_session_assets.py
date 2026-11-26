@@ -57,6 +57,17 @@ def check(apk, overlay=OVERLAY):
             if content != source.read_bytes():
                 errors.append('stale ' + asset)
         if overlay == OVERLAY:
+            # Do not ship a native Steam compatibility build without its ARM64 preload.
+            lse_asset = 'assets/linuxfs/usr/local/lib/liblse_emu.so'
+            license_asset = 'assets/linuxfs/usr/local/share/licenses/lse-emu/LICENSE'
+            try:
+                elf = package.read(lse_asset)
+                if len(elf) < 64 or elf[:6] != b'\x7fELF\x02\x01' or int.from_bytes(elf[18:20], 'little') != 183:
+                    errors.append('invalid AArch64 ELF: ' + lse_asset)
+                if package.read(license_asset) != (OVERLAY.parents[1] / 'lse-emu/LICENSE').read_bytes():
+                    errors.append('incorrect LSE-Emu license')
+            except KeyError as error:
+                errors.append('missing native Steam compatibility asset: ' + str(error))
             spec = importlib.util.spec_from_file_location('powervr_fetch',
                     OVERLAY.parents[1] / 'powervr/fetch.py')
             runtime = importlib.util.module_from_spec(spec)
