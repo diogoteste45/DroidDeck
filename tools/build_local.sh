@@ -540,6 +540,10 @@ if [[ "${DROIDDECK_SKIP_RUST:-0}" != 1 ]]; then
 fi
 python3 tools/powervr/fetch.py
 bash tools/packs/build.sh app/build/packs
+# Build the ARMv8.0 compatibility preload with the same glibc toolchain as the other guest preloads.
+docker run --rm --platform "${docker_platform}" --user "$(id -u):$(id -g)" \
+    -v "${repo_root}:/src" -w /src "${image_name}" \
+    bash tools/lse-emu/build.sh /src/app/src/main/assets/linuxfs
 python3 tools/release/runtime_inputs.py record
 ./gradlew "${gradle_task}" --console=plain -PndkVersion="${ndk_version}" ${gradle_rust_arg}
 python3 tools/release/check_session_assets.py "app/build/outputs/apk/${build_variant}/app-${build_variant}.apk"
