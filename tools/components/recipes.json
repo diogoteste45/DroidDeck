@@ -266,5 +266,22 @@
       "lld",
       "llvm"
     ]
+  },
+  "lse-emu": {
+    "command": [
+      "bash",
+      "tools/lse-emu/build.sh"
+    ],
+    "inputs": [
+      "tools/lse-emu"
+    ],
+    "outputs": [
+      "app/src/main/assets/linuxfs/usr/local/lib/liblse_emu.so",
+      "app/src/main/assets/linuxfs/usr/local/share/licenses/lse-emu/LICENSE"
+    ],
+    "packages": [
+      "gcc-aarch64-linux-gnu",
+      "libc6-dev-arm64-cross"
+    ]
   }
 }
