@@ -162,6 +162,7 @@ if __name__ == '__main__':
     elif args.recipe == 'tools':
         prepare_tools(os.environ.get('COMPONENTS_TO_BUILD', '').split())
     elif args.recipe == 'pack':
+        prepare('lse-emu')
         pack(args.archive)
     elif args.recipe == 'unpack':
         unpack(args.archive, args.tree)
