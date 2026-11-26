@@ -698,15 +698,6 @@ case $mode in
     export MOZ_SHM_NO_SEALS=1
     steam_x64=0
     [ "${DD_STEAM_CLIENT_ARCH:-}" = x86_64 ] && steam_x64=1
-    # ARMv8.0 CPUs (e.g. Snapdragon 685) lack LSE atomics required by native Steam.
-    # Keep native Steam on LSE-capable CPUs (e.g. Snapdragon 480+), and respect x86_64.
-    if [ "$steam_x64" = 0 ] && [ "${DD_FORCE_ARM64_STEAM:-0}" != 1 ]; then
-      if grep -Eq '^Features[[:space:]]*:' /proc/cpuinfo &&
-         ! grep -Eq '^Features[[:space:]]*:.*[[:space:]]atomics([[:space:]]|$)' /proc/cpuinfo; then
-        steam_x64=1
-        echo '== dd-armv8: LSE absent; selecting x86-64 Steam via FEX'
-      fi
-    fi
     steam_cef_gpu=1
     if [ "$steam_x64" = 1 ]; then
       step "checking the Steam client's arm64 parts (first run downloads them, ~1-2 min)"
@@ -724,6 +715,15 @@ case $mode in
         steam_cef_gpu=0
       fi
     else
+      # Native ARM64 Steam: emulate only unsupported LSE instructions, not the client.
+      if [ -r /usr/local/lib/liblse_emu.so ]; then
+        export LSE_EMU=1 LSE_EMU_PATCH="${LSE_EMU_PATCH:-1}" LSE_EMU_STATS=1
+        echo "== dd-armv8: native Steam; LSE compatibility available (hardware checked by library)"
+      elif grep -Eq '^Features[[:space:]]*:' /proc/cpuinfo &&
+           ! grep -Eq '^Features[[:space:]]*:.*[[:space:]]atomics([[:space:]]|$)' /proc/cpuinfo; then
+        echo "== dd-armv8: native Steam requires liblse_emu.so on this CPU" >&2
+        steam_setup_failed 132
+      fi
       step "checking the Steam client (first run downloads it, ~1-2 min with nothing on screen)"
       droiddeck-steam-install || steam_setup_failed $?
       step "Steam client ready"
