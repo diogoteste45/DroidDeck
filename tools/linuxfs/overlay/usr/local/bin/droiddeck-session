@@ -715,6 +715,7 @@ case $mode in
         steam_cef_gpu=0
       fi
     else
+      step "checking the Steam client (first run downloads it, ~1-2 min with nothing on screen)"
       # Native ARM64 Steam: emulate only unsupported LSE instructions, not the client.
       if [ -r /usr/local/lib/liblse_emu.so ]; then
         export LSE_EMU=1 LSE_EMU_PATCH="${LSE_EMU_PATCH:-1}" LSE_EMU_STATS=1
@@ -724,7 +725,6 @@ case $mode in
         echo "== dd-armv8: native Steam requires liblse_emu.so on this CPU" >&2
         steam_setup_failed 132
       fi
-      step "checking the Steam client (first run downloads it, ~1-2 min with nothing on screen)"
       droiddeck-steam-install || steam_setup_failed $?
       step "Steam client ready"
       steam_root=$XDG_DATA_HOME/Steam
