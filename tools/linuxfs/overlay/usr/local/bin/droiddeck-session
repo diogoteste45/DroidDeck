@@ -698,6 +698,15 @@ case $mode in
     export MOZ_SHM_NO_SEALS=1
     steam_x64=0
     [ "${DD_STEAM_CLIENT_ARCH:-}" = x86_64 ] && steam_x64=1
+    # ARMv8.0 CPUs (e.g. Snapdragon 685) lack LSE atomics required by native Steam.
+    # Keep native Steam on LSE-capable CPUs (e.g. Snapdragon 480+), and respect x86_64.
+    if [ "$steam_x64" = 0 ] && [ "${DD_FORCE_ARM64_STEAM:-0}" != 1 ]; then
+      if grep -Eq '^Features[[:space:]]*:' /proc/cpuinfo &&
+         ! grep -Eq '^Features[[:space:]]*:.*[[:space:]]atomics([[:space:]]|$)' /proc/cpuinfo; then
+        steam_x64=1
+        echo '== dd-armv8: LSE absent; selecting x86-64 Steam via FEX'
+      fi
+    fi
     steam_cef_gpu=1
     if [ "$steam_x64" = 1 ]; then
       step "checking the Steam client's arm64 parts (first run downloads them, ~1-2 min)"
